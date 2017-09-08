@@ -19,6 +19,22 @@ RC4-40bits and RC4-128bits encryption are supported.
 }
 ```
 
+## Manual Installation
+
+If you do not use composer, just require the autoload.php in the /src folder:
+
+```php
+require_once('src/autoload.php');
+```
+
+If you have a PSR-4 autoloader implemented, just register the src path as follows:
+```php
+$loader = new \Example\Psr4AutoloaderClass;
+$loader->register();
+$loader->addNamespace('setasign\FpdiProtection', 'path/to/src/');
+```
+
+
 ## Example
 
 This class offers one public method, which allows you to set the protection of the resulting PDF document.
