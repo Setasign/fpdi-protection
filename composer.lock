@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "3970c37941bb31701d322b9f7f94af11",
+    "content-hash": "946b3566498ccfb4e921b8caf59fca1c",
     "packages": [
         {
             "name": "setasign/fpdi",
@@ -1491,7 +1491,7 @@
     "prefer-lowest": false,
     "platform": {
         "php": "^5.6 || ^7.0",
-        "lib-openssl": "*"
+        "ext-openssl": "*"
     },
     "platform-dev": []
 }
