@@ -18,3 +18,25 @@ RC4-40bits and RC4-128bits encryption are supported.
     }
 }
 ```
+
+## Example
+
+This class offers one public method, which allows you to set the protection of the resulting PDF document.
+All other code is identically to FPDI or FPDF.
+
+```php
+<?php
+use setasign\FpdiProtection\FpdiProtection;
+
+// setup the autoload function
+require_once('vendor/autoload.php');
+
+$pdf = new FpdiProtection();
+$pdf->setProtection(
+    FpdiProtection::PERM_PRINT | FpdiProtection::PERM_COPY,
+    'the user password',
+    'the owner password'
+);
+
+// ...
+```

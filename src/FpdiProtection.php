@@ -212,11 +212,11 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
     /**
      * Set permissions as well as user and owner passwords
      *
-     * @param int|array $permissions An array of permission values (see constants) or the sum of the constant values.
-     *                               If a value is present it means that the permission is granted
-     * @param string $userPass If a user password is set, user will be prompted before document is opened
+     * @param int|array $permissions An array of permission values (see class constants) or the sum of the constant
+     *                               values. If a value is present it means that the permission is granted.
+     * @param string $userPass If a user password is set, user will be prompted before document is opened.
      * @param null $ownerPass If an owner password is set, document can be opened in privilege mode with no
-     *                        restriction if that password is entered
+     *                        restriction if that password is entered.
      * @param int $revision The revision number of the security handler (2 = RC4-40bits, 3 = RC4-128bits)
      */
     public function setProtection($permissions, $userPass = '', $ownerPass = null, $revision = 3)
