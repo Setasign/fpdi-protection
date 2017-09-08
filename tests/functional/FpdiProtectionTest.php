@@ -135,7 +135,7 @@ class FpdiProtectionTest extends TestCase
         $method = $reflection->getMethod('getPdfReader');
         $method->setAccessible(true);
 
-        $pdf->SetProtection([], '', null);
+        $pdf->setProtection([], '', null);
         $pdf->AddPage();
         $pdf->setSourceFile($path);
 
@@ -228,7 +228,7 @@ class FpdiProtectionTest extends TestCase
         $method = $reflection->getMethod('getPdfReader');
         $method->setAccessible(true);
 
-        $pdf->SetProtection([], '', null, 2);
+        $pdf->setProtection([], '', null, 2);
         $pdf->AddPage();
         $pdf->setSourceFile($path);
 

@@ -20,7 +20,7 @@ $files = [
 
 $pdf = new FpdiProtection();
 
-$pdf->SetProtection([FpdiProtection::PERM_PRINT], '', 'testen', 3);
+$pdf->setProtection([FpdiProtection::PERM_PRINT], '', 'testen', 3);
 
 foreach ($files as $file) {
     $pageCount = $pdf->setSourceFile($file);
