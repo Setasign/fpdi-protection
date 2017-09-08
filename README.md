@@ -3,9 +3,9 @@ FpdiProtection
 
 [![Latest Stable Version](https://poser.pugx.org/setasign/fpdi-protection/v/stable.svg)](https://packagist.org/packages/setasign/fpdi-protection) [![Total Downloads](https://poser.pugx.org/setasign/fpdi-protection/downloads.svg)](https://packagist.org/packages/setasign/fpdi-protection) [![Latest Unstable Version](https://poser.pugx.org/setasign/fpdi-protection/v/unstable.svg)](https://packagist.org/packages/setasign/fpdi-protection) [![License](https://poser.pugx.org/setasign/fpdi-protection/license.svg)](https://packagist.org/packages/setasign/fpdi-protection)
 
-A FPDI 2 compatible and enhanced version of the [FPDF_Protection](http://www.fpdf.org/en/script/script37.php) script.
+A [FPDI](https://www.setasign.com/fpdi) 2 compatible and enhanced version of the [FPDF_Protection](http://www.fpdf.org/en/script/script37.php) script.
 
-This version requires and uses OpenSSL functions instead of MCrypt or a user land implementation of RC4.
+This version requires and uses OpenSSL functions instead of Mcrypt or a user land implementation of RC4.
 
 RC4-40bits and RC4-128bits encryption are supported.
 
@@ -34,11 +34,12 @@ $loader->register();
 $loader->addNamespace('setasign\FpdiProtection', 'path/to/src/');
 ```
 
+Don't forget to install [FPDI](https://www.setasign.com/fpdi) and [FPDF](http://www.fpdf.org/), too!
 
 ## Example
 
 This class offers one public method, which allows you to set the protection of the resulting PDF document.
-All other code is identically to FPDI or FPDF.
+All other code is identically to [FPDI](https://www.setasign.com/fpdi) or [FPDF](http://www.fpdf.org/).
 
 ```php
 <?php
