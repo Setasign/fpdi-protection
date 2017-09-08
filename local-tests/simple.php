@@ -2,7 +2,9 @@
 
 use setasign\FpdiProtection\FpdiProtection;
 
+
 require_once '../vendor/autoload.php';
+require_once '../src/autoload.php';
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -12,13 +14,13 @@ $start = microtime(true);
 
 $files = [
     __DIR__ . '/../tests/_files/pdfs/Noisy-Tube.pdf',
-//    __DIR__ . '/../tests/_files/pdfs/filters/hex/hex.pdf',
+    __DIR__ . '/../tests/_files/pdfs/filters/hex/hex.pdf',
 ];
 
 
 $pdf = new FpdiProtection();
 
-$pdf->SetProtection([], '', 'testen');
+$pdf->SetProtection([FpdiProtection::PERM_PRINT], '', 'testen', 3);
 
 foreach ($files as $file) {
     $pageCount = $pdf->setSourceFile($file);
