@@ -305,4 +305,21 @@ class FpdiProtectionTest extends TestCase
 
         $this->assertEquals('Futura Std Medium', $realFontFamily);
     }
+
+    public function testPdfVersionChange()
+    {
+        $pdf = new FpdiProtection();
+        $pdfString = $pdf->Output('S');
+        $this->assertStringStartsWith('%PDF-1.3', $pdfString);
+
+        $pdf = new FpdiProtection();
+        $pdf->setProtection([], '', null, 2);
+        $pdfString = $pdf->Output('S');
+        $this->assertStringStartsWith('%PDF-1.3', $pdfString);
+
+        $pdf = new FpdiProtection();
+        $pdf->setProtection([], '', null, 3);
+        $pdfString = $pdf->Output('S');
+        $this->assertStringStartsWith('%PDF-1.4', $pdfString);
+    }
 }

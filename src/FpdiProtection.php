@@ -226,6 +226,10 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
             throw new \InvalidArgumentException('Only revision 2 or 3 are supported.');
         }
 
+        if ($revision === 3) {
+            $this->setMinPdfVersion('1.4');
+        }
+
         $this->pValue = $this->sanitizePermissionsValue($permissions, $revision);
 
         if ($ownerPass === null || $ownerPass === '') {
