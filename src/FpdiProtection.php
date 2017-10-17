@@ -218,6 +218,7 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
      * @param null $ownerPass If an owner password is set, document can be opened in privilege mode with no
      *                        restriction if that password is entered.
      * @param int $revision The revision number of the security handler (2 = RC4-40bits, 3 = RC4-128bits)
+     * @return string The owner password
      */
     public function setProtection($permissions, $userPass = '', $ownerPass = null, $revision = 3)
     {
@@ -227,7 +228,7 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
 
         $this->pValue = $this->sanitizePermissionsValue($permissions, $revision);
 
-        if ($ownerPass === null) {
+        if ($ownerPass === null || $ownerPass === '') {
             $ownerPass = function_exists('random_bytes') ? \random_bytes(32) : uniqid(rand());
         }
 
@@ -240,6 +241,8 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
         $this->oValue = $this->computeOValue($userPass, $ownerPass);
         $this->encryptionKey = $this->computeEncryptionKey($userPass);
         $this->uValue = $this->computeUValue($this->encryptionKey);
+
+        return $ownerPass;
     }
 
     /**

@@ -41,6 +41,9 @@ Don't forget to install [FPDI](https://www.setasign.com/fpdi) and [FPDF](http://
 This class offers one public method, which allows you to set the protection of the resulting PDF document.
 All other code is identically to [FPDI](https://www.setasign.com/fpdi) or [FPDF](http://www.fpdf.org/).
 
+If you pass null or an empty string as the owner password the method will create a random owner password.
+The return value of this method is the owner password.
+
 ```php
 <?php
 use setasign\FpdiProtection\FpdiProtection;
@@ -49,7 +52,7 @@ use setasign\FpdiProtection\FpdiProtection;
 require_once('vendor/autoload.php');
 
 $pdf = new FpdiProtection();
-$pdf->setProtection(
+$ownerPassword = $pdf->setProtection(
     FpdiProtection::PERM_PRINT | FpdiProtection::PERM_COPY,
     'the user password',
     'the owner password'
