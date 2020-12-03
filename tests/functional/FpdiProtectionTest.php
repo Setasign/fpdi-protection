@@ -75,21 +75,17 @@ class FpdiProtectionTest extends TestCase
         $this->assertSame($expectedValue, $pdf->sanitizePermissionsValue($value, $revision));
     }
 
-    /**
-     * @expectedException \InvalidArgumentException
-     */
     public function testSanitizePermissionsValueWithInvalidArgument()
     {
         $pdf = new FpdiProtection();
+        $this->expectException(\InvalidArgumentException::class);
         $pdf->sanitizePermissionsValue(1, 3);
     }
 
-    /**
-     * @expectedException \InvalidArgumentException
-     */
     public function testSetProtectionWithInvalidRevision()
     {
         $pdf = new FpdiProtection();
+        $this->expectException(\InvalidArgumentException::class);
         $pdf->setProtection([], '', null, 1);
     }
 
