@@ -318,4 +318,31 @@ class FpdiProtectionTest extends TestCase
         $pdfString = $pdf->Output('S');
         $this->assertStringStartsWith('%PDF-1.4', $pdfString);
     }
+
+    public function testLinks()
+    {
+        $linkTarget = 'https://setasign.com';
+        $pdf = new FpdiProtection();
+        $pdf->setProtection([], 'user', 'owner', 3);
+        $pdf->AddPage();
+        $pdf->SetFont('Helvetica', '', 12);
+        $pdf->Cell(0, 10, 'Test', 0, 0, '', false, $linkTarget);
+
+        $encryptionKey = $this->getEncryptionKey($pdf);
+
+        $pdfString = $pdf->Output('S');
+
+        // let's extract the object manually and parse it into a object structre
+        preg_match('~5 0 obj(.*?)endobj~s', $pdfString, $match);
+        $parser = new PdfParser(StreamReader::createByString($match[1]));
+        $value = $parser->readValue();
+
+        $uri = PdfString::unescape($value->value['A']->value['URI']->value);
+
+        $uri = openssl_decrypt(
+            $uri, 'RC4-40', $this->calcKey($encryptionKey, 5, 3),  OPENSSL_RAW_DATA
+        );
+
+        $this->assertEquals($linkTarget, $uri);
+    }
 }
