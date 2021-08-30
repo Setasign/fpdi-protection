@@ -3,9 +3,8 @@
  * This file is part of FpdiProtection
  *
  * @package   setasign\FpdiProtection
- * @copyright Copyright (c) 2017 Setasign - Jan Slabon (https://www.setasign.com)
+ * @copyright Copyright (c) 2021 Setasign - Jan Slabon (https://www.setasign.com)
  * @license   http://opensource.org/licenses/mit-license The MIT License
- * @version   2.0.0
  */
 
 namespace setasign\FpdiProtection;
