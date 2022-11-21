@@ -194,11 +194,6 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
     protected $fileIdentifier;
 
     /**
-     * @var callable
-     */
-    protected $arcfour;
-
-    /**
      * FpdiProtection constructor.
      *
      * @param string $orientation
