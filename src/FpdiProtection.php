@@ -214,6 +214,43 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
             );
         }
     }
+    /**
+     * Check if a password meets the strength requirements
+     *
+     * @param string $password The password to check
+     * @return bool
+     */
+    protected function isPasswordStrong($password)
+    {
+        // Password should be at least 6 characters long
+        if (strlen($password) < 6) {
+            return false;
+        }
+
+        // Password should contain at least one uppercase letter
+        if (!preg_match('/[A-Z]/', $password)) {
+            return false;
+        }
+
+        // Password should contain at least one lowercase letter
+        if (!preg_match('/[a-z]/', $password)) {
+            return false;
+        }
+
+        // Password should contain at least one digit
+        if (!preg_match('/\d/', $password)) {
+            return false;
+        }
+
+        // Password should contain at least one special character
+        if (!preg_match('/[!@#$%^&*()\-_=+{};:,<.>]/', $password)) {
+            return false;
+        }
+
+        // All checks passed, password is strong
+        return true;
+    }
+
 
     /**
      * Set permissions as well as user and owner passwords
@@ -228,6 +265,14 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
      */
     public function setProtection($permissions, $userPass = '', $ownerPass = null, $revision = 3)
     {
+        // Password strength validation
+        if ($userPass !== '' && !$this->isPasswordStrong($userPass)) {
+            throw new \InvalidArgumentException('User password does not meet the strength requirements.');
+        }
+        if ($ownerPass !== null && !$this->isPasswordStrong($ownerPass)) {
+            throw new \InvalidArgumentException('Owner password does not meet the strength requirements.');
+        }
+        
         if ($revision < 2 || $revision > 3) {
             throw new \InvalidArgumentException('Only revision 2 or 3 are supported.');
         }

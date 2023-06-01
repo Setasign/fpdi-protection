@@ -86,7 +86,7 @@ class FpdiProtectionTest extends TestCase
     {
         $pdf = new FpdiProtection();
         $this->expectException(\InvalidArgumentException::class);
-        $pdf->setProtection([], '', null, 1);
+        $pdf->setProtection([], '113pasS#', null, 1);
     }
 
     private function getEncryptionKey(FpdiProtection $pdf)
@@ -131,7 +131,7 @@ class FpdiProtectionTest extends TestCase
         $method = $reflection->getMethod('getPdfReader');
         $method->setAccessible(true);
 
-        $pdf->setProtection([], '', null);
+        $pdf->setProtection([], 'paSs123#', null);
         $pdf->AddPage();
         $pdf->setSourceFile($path);
 
@@ -224,7 +224,7 @@ class FpdiProtectionTest extends TestCase
         $method = $reflection->getMethod('getPdfReader');
         $method->setAccessible(true);
 
-        $pdf->setProtection([], '', null, 2);
+        $pdf->setProtection([], 'paSs#123', null, 2);
         $pdf->AddPage();
         $pdf->setSourceFile($path);
 
@@ -309,12 +309,12 @@ class FpdiProtectionTest extends TestCase
         $this->assertStringStartsWith('%PDF-1.3', $pdfString);
 
         $pdf = new FpdiProtection();
-        $pdf->setProtection([], '', null, 2);
+        $pdf->setProtection([], 'Pass1@#', null, 2);
         $pdfString = $pdf->Output('S');
         $this->assertStringStartsWith('%PDF-1.3', $pdfString);
 
         $pdf = new FpdiProtection();
-        $pdf->setProtection([], '', null, 3);
+        $pdf->setProtection([], 'Pass1@#', null, 3);
         $pdfString = $pdf->Output('S');
         $this->assertStringStartsWith('%PDF-1.4', $pdfString);
     }
@@ -323,7 +323,7 @@ class FpdiProtectionTest extends TestCase
     {
         $linkTarget = 'https://setasign.com';
         $pdf = new FpdiProtection();
-        $pdf->setProtection([], 'user', 'owner', 3);
+        $pdf->setProtection([], 'User12@2', 'Owner12@23', 3);
         $pdf->AddPage();
         $pdf->SetFont('Helvetica', '', 12);
         $pdf->Cell(0, 10, 'Test', 0, 0, '', false, $linkTarget);
@@ -344,5 +344,62 @@ class FpdiProtectionTest extends TestCase
         );
 
         $this->assertEquals($linkTarget, $uri);
+    }
+
+    protected function isPasswordStrong($password)
+    {
+        // Password should be at least 6 characters long
+        if (strlen($password) < 6) {
+            return false;
+        }
+
+        // Password should contain at least one uppercase letter
+        if (!preg_match('/[A-Z]/', $password)) {
+            return false;
+        }
+
+        // Password should contain at least one lowercase letter
+        if (!preg_match('/[a-z]/', $password)) {
+            return false;
+        }
+
+        // Password should contain at least one digit
+        if (!preg_match('/\d/', $password)) {
+            return false;
+        }
+
+        // Password should contain at least one special character
+        if (!preg_match('/[!@#$%^&*()\-_=+{};:,<.>]/', $password)) {
+            return false;
+        }
+
+        // All checks passed, password is strong
+        return true;
+    }
+    public function testPasswordStrength()
+    {
+        // Test a strong password
+        $strongPassword = "StrongPass123!";
+        $this->assertTrue($this->isPasswordStrong($strongPassword));
+
+        // Test a password with less than 8 characters
+        $shortPassword = "short";
+        $this->assertFalse($this->isPasswordStrong($shortPassword));
+
+        // Test a password without an uppercase letter
+        $noUppercasePassword = "weakpassword123!";
+        $this->assertFalse($this->isPasswordStrong($noUppercasePassword));
+
+        // Test a password without a lowercase letter
+        $noLowercasePassword = "WEAKPASSWORD123!";
+        $this->assertFalse($this->isPasswordStrong($noLowercasePassword));
+
+        // Test a password without a digit
+        $noDigitPassword = "WeakPassword!";
+        $this->assertFalse($this->isPasswordStrong($noDigitPassword));
+
+        // Test a password without a special character
+        $noSpecialCharPassword = "WeakPassword123";
+        $this->assertFalse($this->isPasswordStrong($noSpecialCharPassword));
     }
 }
