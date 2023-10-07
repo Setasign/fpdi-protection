@@ -194,23 +194,30 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
     protected $fileIdentifier;
 
     /**
+     * @var bool
+     */
+    protected $bad_openssl;
+
+    /**
      * FpdiProtection constructor.
      *
      * @param string $orientation
      * @param string $unit
      * @param string $size
      */
-    public function __construct($orientation = 'P', $unit = 'mm', $size = 'A4')
+    public function __construct($orientation = 'P', $unit = 'mm', $size = 'A4', $bad_openssl = false)
     {
         parent::__construct($orientation, $unit, $size);
+        $this->bad_openssl = $bad_openssl;
 
         $randomBytes = function_exists('random_bytes') ? \random_bytes(32) : \mt_rand();
         $this->fileIdentifier = md5(__FILE__ . PHP_SAPI . PHP_VERSION . $randomBytes, true);
 
-        if (!function_exists('openssl_encrypt') || !in_array('rc4-40', openssl_get_cipher_methods(), true)) {
+        if (!$bad_openssl && !function_exists('openssl_encrypt') || !in_array('rc4-40', openssl_get_cipher_methods(), true)) {
             throw new \RuntimeException(
                 'OpenSSL with RC4 supported is required. In case you use OpenSSL 3 make sure that ' .
-                'legacy providers are loaded (see https://wiki.openssl.org/index.php/OpenSSL_3.0#Providers).'
+                'legacy providers are loaded (see https://wiki.openssl.org/index.php/OpenSSL_3.0#Providers).' .
+                'Pass $bad_openssl as true to fallback on a pure PHP implementation.'
             );
         }
     }
@@ -509,6 +516,9 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
      */
     protected function arcfour($key, $data)
     {
+        if($this->bad_openssl) {
+            return $this->rc4($key, $data);
+        }
         return openssl_encrypt($data, 'RC4-40', $key, OPENSSL_RAW_DATA, '');
     }
 
@@ -645,5 +655,73 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
             $fileIdentifier = $filter->encode($this->fileIdentifier, true);
             $this->_put('/ID [<' . $fileIdentifier . '><' . $fileIdentifier . '>]');
         }
+    }
+
+    /*
+    * Copyright 2011 Michael Cutler <m@cotdp.com>
+    *
+    * Licensed under the Apache License, Version 2.0 (the "License");
+    * you may not use this file except in compliance with the License.
+    * You may obtain a copy of the License at
+    *
+    *     http://www.apache.org/licenses/LICENSE-2.0
+    *
+    * Unless required by applicable law or agreed to in writing, software
+    * distributed under the License is distributed on an "AS IS" BASIS,
+    * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    * See the License for the specific language governing permissions and
+    * limitations under the License.
+    */
+
+    /**
+     * A PHP implementation of RC4 based on the original C code from
+     * the 1994 usenet post:
+     *
+     * http://groups.google.com/groups?selm=sternCvKL4B.Hyy@netcom.com
+     *
+     * @param string $key_str the key as a binary string
+     * @param string $data_str the data to decrypt/encrypt as a binary string
+     * @return string the result of the RC4 as a binary string
+     * @author Michael Cutler <m@cotdp.com>
+     */
+    private function rc4($key_str, $data_str)
+    {
+        // convert input string(s) to array(s)
+        $key = array();
+        $data = array();
+        for ($i = 0; $i < strlen($key_str); $i++) {
+            $key[] = ord($key_str[$i]);
+        }
+        for ($i = 0; $i < strlen($data_str); $i++) {
+            $data[] = ord($data_str[$i]);
+        }
+        // prepare key
+        $state = range(0, 255);
+        $len = count($key);
+        $index1 = $index2 = 0;
+        for ($counter = 0; $counter < 256; $counter++) {
+            $index2 = ($key[$index1] + $state[$counter] + $index2) % 256;
+            $tmp = $state[$counter];
+            $state[$counter] = $state[$index2];
+            $state[$index2] = $tmp;
+            $index1 = ($index1 + 1) % $len;
+        }
+        // rc4
+        $len = count($data);
+        $x = $y = 0;
+        for ($counter = 0; $counter < $len; $counter++) {
+            $x = ($x + 1) % 256;
+            $y = ($state[$x] + $y) % 256;
+            $tmp = $state[$x];
+            $state[$x] = $state[$y];
+            $state[$y] = $tmp;
+            $data[$counter] ^= $state[($state[$x] + $state[$y]) % 256];
+        }
+        // convert output back to a string
+        $data_str = "";
+        for ($i = 0; $i < $len; $i++) {
+            $data_str .= chr($data[$i]);
+        }
+        return $data_str;
     }
 }
