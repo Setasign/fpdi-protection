@@ -519,9 +519,9 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
         if (!$this->useArcfourFallback) {
             return openssl_encrypt($data, 'rc4-40', $key,  OPENSSL_RAW_DATA, '');
         }
-        
+
         static $_lastRc4Key = null, $_lastRc4KeyValue = null;
-    
+
         if ($_lastRc4Key !== $key) {
             $k = str_repeat($key, (int)(256 / strlen($key) + 1));
             $rc4 = range(0, 255);
@@ -532,11 +532,11 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
             }
             $_lastRc4Key = $key;
             $_lastRc4KeyValue = $rc4;
-    
+
         } else {
             $rc4 = $_lastRc4KeyValue;
         }
-    
+
         $len = strlen($data);
         $newData = '';
         $a = 0;
@@ -547,7 +547,7 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
             $rc4[$b] = $t;
             $newData .= chr(ord($data[$i]) ^ $rc4[($rc4[$a] + $rc4[$b]) % 256]);
         }
-    
+
         return $newData;
     }
 
@@ -710,26 +710,26 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
 
     protected function getOpensslVersionNumber($patchAsNumber = false, $opensslVersionNumber = null) {
         if (is_null($opensslVersionNumber)) $opensslVersionNumber = OPENSSL_VERSION_NUMBER;
-        $opensslVersionNumber = str_pad((string)dechex($opensslVersionNumber), 8, '0', STR_PAD_LEFT);
-    
-        $opensslVersionNumber = array();
+        $opensslNumericIdentifier = str_pad((string)dechex($opensslVersionNumber),8,'0',STR_PAD_LEFT);
+
+        $opensslVersionParsed = array();
         $preg = '/(?<major>[[:xdigit:]])(?<minor>[[:xdigit:]][[:xdigit:]])(?<fix>[[:xdigit:]][[:xdigit:]])';
         $preg.= '(?<patch>[[:xdigit:]][[:xdigit:]])(?<type>[[:xdigit:]])/';
-        preg_match_all($preg, $opensslVersionNumber, $opensslVersionNumber);
+        preg_match_all($preg, $opensslNumericIdentifier, $opensslVersionParsed);
         $opensslVersion = false;
-        if (!empty($opensslVersionNumber)) {
+        if (!empty($opensslVersionParsed)) {
             $alphabet = array(1=>'a',2=>'b',3=>'c',4=>'d',5=>'e',6=>'f',7=>'g',8=>'h',9=>'i',10=>'j',11=>'k',
                                            12=>'l',13=>'m',14=>'n',15=>'o',16=>'p',17=>'q',18=>'r',19=>'s',20=>'t',21=>'u',
                                            22=>'v',23=>'w',24=>'x',25=>'y',26=>'z');
-            $opensslVersion = intval($opensslVersionNumber['major'][0]).'.';
-            $opensslVersion.= intval($opensslVersionNumber['minor'][0]).'.';
-            $opensslVersion.= intval($opensslVersionNumber['fix'][0]);
-            $patchlevelDec = hexdec($opensslVersionNumber['patch'][0]);
+            $opensslVersion = intval($opensslVersionParsed['major'][0]).'.';
+            $opensslVersion.= intval($opensslVersionParsed['minor'][0]).'.';
+            $opensslVersion.= intval($opensslVersionParsed['fix'][0]);
+            $patchlevelDec = hexdec($opensslVersionParsed['patch'][0]);
             if (!$patchAsNumber && array_key_exists($patchlevelDec, $alphabet)) {
-                $opensslVersion .= $alphabet[$patchlevelDec]; // ideal for text comparison
+                $opensslVersion.= $alphabet[$patchlevelDec]; // ideal for text comparison
             }
             else {
-                $opensslVersion .= '.' . $patchlevelDec; // ideal for version_compare
+                $opensslVersion.= '.'.$patchlevelDec; // ideal for version_compare
             }
         }
         return $opensslVersion;
