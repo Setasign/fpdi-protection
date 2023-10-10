@@ -709,7 +709,7 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
     }
 
     protected function getOpensslVersionNumber($patchAsNumber = false, $opensslVersionNumber = null) {
-        if (is_null($opensslVersionNumber)) $opensslVersionNumber = opensslVersionNumber;
+        if (is_null($opensslVersionNumber)) $opensslVersionNumber = OPENSSL_VERSION_NUMBER;
         $opensslVersionNumber = str_pad((string)dechex($opensslVersionNumber), 8, '0', STR_PAD_LEFT);
     
         $opensslVersionNumber = array();
