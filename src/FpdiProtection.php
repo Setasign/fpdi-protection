@@ -209,11 +209,13 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
     {
         parent::__construct($orientation, $unit, $size);
 
+        // PHP 7.1-8.0 requires OpenSSL >= 1.0.1, < 3.0
+        $isOpensslCompatibleWithPhp7 = PHP_VERSION_ID < 70100 || PHP_VERSION_ID > 80100 || OPENSSL_VERSION_NUMBER >= 0x10001010 && OPENSSL_VERSION_NUMBER < 0x30000000;
         $randomBytes = function_exists('random_bytes') ? \random_bytes(32) : \mt_rand();
         $this->fileIdentifier = md5(__FILE__ . PHP_SAPI . PHP_VERSION . $randomBytes, true);
         $this->useArcfourFallback = $useArcfourFallback;
 
-        if (!$useArcfourFallback && (!function_exists('openssl_encrypt') || !in_array('rc4-40', openssl_get_cipher_methods(), true) || !$this->isOpensslCompatible())) {
+        if (!$useArcfourFallback && (!function_exists('openssl_encrypt') || !in_array('rc4-40', openssl_get_cipher_methods(), true) || !$isOpensslCompatibleWithPhp7)) {
             throw new \RuntimeException(
                 'OpenSSL with RC4 supported is required if $useArcfourFallback is false.' .
                 'If using OpenSSL 3 make sure that legacy providers are loaded ' .
@@ -684,28 +686,6 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
             $fileIdentifier = $filter->encode($this->fileIdentifier, true);
             $this->_put('/ID [<' . $fileIdentifier . '><' . $fileIdentifier . '>]');
         }
-    }
-
-    protected function isOpensslCompatible() {
-        $compatible = false;
-        $opensslVersion = $this->getOpensslVersionNumber();
-        if (PHP_VERSION_ID < 70100) {
-            // PHP 7.0 requires OpenSSL >= 0.9.8, < 1.2
-            if (version_compare($opensslVersion, '0.9.8', '>=') && version_compare($opensslVersion, '1.2.0', '<')) {
-                $compatible = true;
-            }
-        } elseif (PHP_VERSION_ID < 80000) {
-            // PHP 7.1-8.0 requires OpenSSL >= 1.0.1, < 3.0
-            if (version_compare($opensslVersion, '1.0.1', '>=') && version_compare($opensslVersion, '3.0.0', '<')) {
-                $compatible = true;
-            }
-        } elseif (PHP_VERSION_ID >= 80100) {
-            // PHP >= 8.1 requires OpenSSL >= 1.0.2, < 4.0
-            if (version_compare($opensslVersion, '1.0.2', '>=') && version_compare($opensslVersion, '4.0.0', '<')) {
-                $compatible = true;
-            }
-        }
-        return $compatible;
     }
 
     protected function getOpensslVersionNumber($patchAsNumber = false, $opensslVersionNumber = null) {
