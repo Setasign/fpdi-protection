@@ -196,7 +196,7 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
     /**
      * @var bool
      */
-    protected $useArcfourFallback = false;
+    protected $useArcfourFallback;
 
     /**
      * FpdiProtection constructor.
@@ -211,18 +211,13 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
 
         $randomBytes = function_exists('random_bytes') ? \random_bytes(32) : \mt_rand();
         $this->fileIdentifier = md5(__FILE__ . PHP_SAPI . PHP_VERSION . $randomBytes, true);
+        $this->useArcfourFallback = $useArcfourFallback;
 
-       if ($useArcfourFallback && extension_loaded('openssl')) {
-            $supportsRc4 = in_array('rc4-40', openssl_get_cipher_methods(), true);
-            $this->useArcfourFallback = ((OPENSSL_VERSION_NUMBER >= 0x10100000) && PHP_VERSION_ID < 80000) || !$supportsRc4;
-            if($this->useArcfourFallback) return;
-       }
-
-       if (!function_exists('openssl_encrypt') || !in_array('rc4-40', openssl_get_cipher_methods(), true)) {
+        if (!$useArcfourFallback && (!function_exists('openssl_encrypt') || !in_array('rc4-40', openssl_get_cipher_methods(), true) || !$this->isOpensslCompatible())) {
             throw new \RuntimeException(
-                'OpenSSL with RC4 supported is required. In case you use OpenSSL 3 make sure that ' .
-                'legacy providers are loaded (see https://wiki.openssl.org/index.php/OpenSSL_3.0#Providers).' .
-                'If '
+                'OpenSSL with RC4 supported is required if $useArcfourFallback is false.' .
+                'If using OpenSSL 3 make sure that legacy providers are loaded ' .
+                '(see https://wiki.openssl.org/index.php/OpenSSL_3.0#Providers).' .
             );
         }
     }
@@ -689,5 +684,53 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
             $fileIdentifier = $filter->encode($this->fileIdentifier, true);
             $this->_put('/ID [<' . $fileIdentifier . '><' . $fileIdentifier . '>]');
         }
+    }
+
+    protected function isOpensslCompatible() {
+        $compatible = false;
+        if (PHP_VERSION_ID < 70100) {
+            // PHP 7.0 requires OpenSSL >= 0.9.8, < 1.2
+            if (version_compare(get_openssl_version_number(), '0.9.8', '>=') && version_compare(get_openssl_version_number(), '1.2.0', '<')) {
+                $compatible = true;
+            }
+        } elseif (PHP_VERSION_ID < 80000) {
+            // PHP 7.1-8.0 requires OpenSSL >= 1.0.1, < 3.0
+            if (version_compare(get_openssl_version_number(), '1.0.1', '>=') && version_compare(get_openssl_version_number(), '3.0.0', '<')) {
+                $compatible = true;
+            }
+        } elseif (PHP_VERSION_ID >= 80100) {
+            // PHP >= 8.1 requires OpenSSL >= 1.0.2, < 4.0
+            if (version_compare(get_openssl_version_number(), '1.0.2', '>=') && version_compare(get_openssl_version_number(), '4.0.0', '<')) {
+                $compatible = true;
+            }
+        }
+        return $compatible;
+    }
+
+    protected function getOpensslVersionNumber($patchAsNumber = false, $opensslVersionNumber = null) {
+        if (is_null($opensslVersionNumber)) $opensslVersionNumber = opensslVersionNumber;
+        $opensslVersionNumber = str_pad((string)dechex($opensslVersionNumber), 8, '0', STR_PAD_LEFT);
+    
+        $opensslVersionNumber = array();
+        $preg = '/(?<major>[[:xdigit:]])(?<minor>[[:xdigit:]][[:xdigit:]])(?<fix>[[:xdigit:]][[:xdigit:]])';
+        $preg.= '(?<patch>[[:xdigit:]][[:xdigit:]])(?<type>[[:xdigit:]])/';
+        preg_match_all($preg, $opensslVersionNumber, $opensslVersionNumber);
+        $opensslVersion = false;
+        if (!empty($opensslVersionNumber)) {
+            $alphabet = array(1=>'a',2=>'b',3=>'c',4=>'d',5=>'e',6=>'f',7=>'g',8=>'h',9=>'i',10=>'j',11=>'k',
+                                           12=>'l',13=>'m',14=>'n',15=>'o',16=>'p',17=>'q',18=>'r',19=>'s',20=>'t',21=>'u',
+                                           22=>'v',23=>'w',24=>'x',25=>'y',26=>'z');
+            $opensslVersion = intval($opensslVersionNumber['major'][0]).'.';
+            $opensslVersion.= intval($opensslVersionNumber['minor'][0]).'.';
+            $opensslVersion.= intval($opensslVersionNumber['fix'][0]);
+            $patchlevelDec = hexdec($opensslVersionNumber['patch'][0]);
+            if (!$patchAsNumber && array_key_exists($patchlevelDec, $alphabet)) {
+                $opensslVersion .= $alphabet[$patchlevelDec]; // ideal for text comparison
+            }
+            else {
+                $opensslVersion .= '.' . $patchlevelDec; // ideal for version_compare
+            }
+        }
+        return $opensslVersion;
     }
 }
