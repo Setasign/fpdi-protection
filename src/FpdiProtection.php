@@ -688,19 +688,20 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
 
     protected function isOpensslCompatible() {
         $compatible = false;
+        $opensslVersion = $this->getOpensslVersionNumber();
         if (PHP_VERSION_ID < 70100) {
             // PHP 7.0 requires OpenSSL >= 0.9.8, < 1.2
-            if (version_compare(get_openssl_version_number(), '0.9.8', '>=') && version_compare(get_openssl_version_number(), '1.2.0', '<')) {
+            if (version_compare($opensslVersion, '0.9.8', '>=') && version_compare($opensslVersion, '1.2.0', '<')) {
                 $compatible = true;
             }
         } elseif (PHP_VERSION_ID < 80000) {
             // PHP 7.1-8.0 requires OpenSSL >= 1.0.1, < 3.0
-            if (version_compare(get_openssl_version_number(), '1.0.1', '>=') && version_compare(get_openssl_version_number(), '3.0.0', '<')) {
+            if (version_compare($opensslVersion, '1.0.1', '>=') && version_compare($opensslVersion, '3.0.0', '<')) {
                 $compatible = true;
             }
         } elseif (PHP_VERSION_ID >= 80100) {
             // PHP >= 8.1 requires OpenSSL >= 1.0.2, < 4.0
-            if (version_compare(get_openssl_version_number(), '1.0.2', '>=') && version_compare(get_openssl_version_number(), '4.0.0', '<')) {
+            if (version_compare($opensslVersion, '1.0.2', '>=') && version_compare($opensslVersion, '4.0.0', '<')) {
                 $compatible = true;
             }
         }
