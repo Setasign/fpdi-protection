@@ -217,7 +217,7 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
             throw new \RuntimeException(
                 'OpenSSL with RC4 supported is required if $useArcfourFallback is false.' .
                 'If using OpenSSL 3 make sure that legacy providers are loaded ' .
-                '(see https://wiki.openssl.org/index.php/OpenSSL_3.0#Providers).' .
+                '(see https://wiki.openssl.org/index.php/OpenSSL_3.0#Providers).'
             );
         }
     }
