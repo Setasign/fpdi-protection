@@ -210,18 +210,19 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
     {
         parent::__construct($orientation, $unit, $size);
 
-        $isOpensslCompatibleWithPhp7 = PHP_VERSION_ID < 70100 || PHP_VERSION_ID > 80100 || OPENSSL_VERSION_NUMBER >= 0x10001010 && OPENSSL_VERSION_NUMBER < 0x30000000;
+        $incompatibleOpenssl = OPENSSL_VERSION_NUMBER >= 0x30000000 && (PHP_VERSION_ID < 80200 || PHP_VERSION_ID >= 70100);
         $randomBytes = function_exists('random_bytes') ? \random_bytes(32) : \mt_rand();
         $this->fileIdentifier = md5(__FILE__ . PHP_SAPI . PHP_VERSION . $randomBytes, true);
         $this->useArcfourFallback = $useArcfourFallback;
 
-        if (!$useArcfourFallback && (!function_exists('openssl_encrypt') || !in_array('rc4-40', openssl_get_cipher_methods(), true) || !$isOpensslCompatibleWithPhp7)) {
-            throw new \RuntimeException(
-                'OpenSSL with RC4 supported is required if $useArcfourFallback is false.' .
-                'If using OpenSSL 3 make sure that legacy providers are loaded ' .
-                '(see https://wiki.openssl.org/index.php/OpenSSL_3.0#Providers).'
-            );
-        }
+        if($useArcfourFallback) return;
+        if(function_exists('openssl_encrypt') && in_array('rc4-40', openssl_get_cipher_methods(), true) && !$incompatibleOpenssl) return;
+
+        throw new \RuntimeException(
+            'OpenSSL with RC4 supported is required if $useArcfourFallback is false.' .
+            'If using OpenSSL 3 make sure that legacy providers are loaded ' .
+            '(see https://wiki.openssl.org/index.php/OpenSSL_3.0#Providers).'
+        );
     }
 
     /**
