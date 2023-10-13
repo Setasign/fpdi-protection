@@ -224,9 +224,9 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
             );
         }
 
-        if(function_exists('openssl_encrypt') && in_array('rc4-40', openssl_get_cipher_methods(), true)) {
+        if(!(function_exists('openssl_encrypt') && in_array('rc4-40', openssl_get_cipher_methods(), true))) {
             throw new \RuntimeException(
-                'OpenSSL with RC4 supported is required if $useArcfourFallback is false.' .
+                'OpenSSL with RC4 supported is required if $useArcfourFallback is false. ' .
                 'If using OpenSSL 3 make sure that legacy providers are loaded ' .
                 '(see https://wiki.openssl.org/index.php/OpenSSL_3.0#Providers).'
             );
