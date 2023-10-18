@@ -214,17 +214,19 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
         $this->fileIdentifier = md5(__FILE__ . PHP_SAPI . PHP_VERSION . $randomBytes, true);
         $this->useArcfourFallback = $useArcfourFallback;
 
-        if($useArcfourFallback) return;
+        if ($useArcfourFallback) {
+            return;
+        }
 
-        if(OPENSSL_VERSION_NUMBER >= 0x30000000 && (PHP_VERSION_ID < 80200 || PHP_VERSION_ID >= 70100)) {
+        if (OPENSSL_VERSION_NUMBER >= 0x30000000 && PHP_VERSION_ID < 80100) {
             throw new \RuntimeException(
-                'OpenSSL 3 is not supported with PHP versions < 8.2.0 and >= 7.1.0. ' .
+                'OpenSSL 3 is not supported with PHP versions < 8.1.0. ' .
                 'You\'re using PHP ' . PHP_VERSION . ' with ' . OPENSSL_VERSION_TEXT . '. ' .
                 'Please fix your PHP installation or set $useArcfourFallback to true to use a slower fallback implementation.'
             );
         }
 
-        if(!(function_exists('openssl_encrypt') && in_array('rc4-40', openssl_get_cipher_methods(), true))) {
+        if (!(function_exists('openssl_encrypt') && in_array('rc4-40', openssl_get_cipher_methods(), true))) {
             throw new \RuntimeException(
                 'OpenSSL with RC4 supported is required if $useArcfourFallback is false. ' .
                 'If using OpenSSL 3 make sure that legacy providers are loaded ' .
