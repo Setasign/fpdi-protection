@@ -194,25 +194,46 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
     protected $fileIdentifier;
 
     /**
+     * @var bool
+     */
+    protected $useArcfourFallback;
+
+    /**
      * FpdiProtection constructor.
      *
      * @param string $orientation
      * @param string $unit
      * @param string $size
+     * @param bool $useArcfourFallback
      */
-    public function __construct($orientation = 'P', $unit = 'mm', $size = 'A4')
+    public function __construct($orientation = 'P', $unit = 'mm', $size = 'A4', $useArcfourFallback = false)
     {
         parent::__construct($orientation, $unit, $size);
 
         $randomBytes = function_exists('random_bytes') ? \random_bytes(32) : \mt_rand();
         $this->fileIdentifier = md5(__FILE__ . PHP_SAPI . PHP_VERSION . $randomBytes, true);
+        $this->useArcfourFallback = $useArcfourFallback;
 
-        if (!function_exists('openssl_encrypt') || !in_array('rc4-40', openssl_get_cipher_methods(), true)) {
+        if ($useArcfourFallback) {
+            return;
+        }
+
+        if (OPENSSL_VERSION_NUMBER >= 0x30000000 && PHP_VERSION_ID < 80100) {
             throw new \RuntimeException(
-                'OpenSSL with RC4 supported is required. In case you use OpenSSL 3 make sure that ' .
-                'legacy providers are loaded (see https://wiki.openssl.org/index.php/OpenSSL_3.0#Providers).'
+                'OpenSSL 3 is not supported with PHP versions < 8.1.0. ' .
+                'You\'re using PHP ' . PHP_VERSION . ' with ' . OPENSSL_VERSION_TEXT . '. ' .
+                'Please fix your PHP installation or set $useArcfourFallback to true to use a slower fallback implementation.'
             );
         }
+
+        if (!(function_exists('openssl_encrypt') && in_array('rc4-40', openssl_get_cipher_methods(), true))) {
+            throw new \RuntimeException(
+                'OpenSSL with RC4 supported is required if $useArcfourFallback is false. ' .
+                'If using OpenSSL 3 make sure that legacy providers are loaded ' .
+                '(see https://wiki.openssl.org/index.php/OpenSSL_3.0#Providers).'
+            );
+        }
+
     }
 
     /**
@@ -509,7 +530,39 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
      */
     protected function arcfour($key, $data)
     {
-        return openssl_encrypt($data, 'RC4-40', $key, OPENSSL_RAW_DATA, '');
+        if (!$this->useArcfourFallback) {
+            return openssl_encrypt($data, 'rc4-40', $key,  OPENSSL_RAW_DATA, '');
+        }
+
+        static $_lastRc4Key = null, $_lastRc4KeyValue = null;
+
+        if ($_lastRc4Key !== $key) {
+            $k = str_repeat($key, (int)(256 / strlen($key) + 1));
+            $rc4 = range(0, 255);
+            $j = 0;
+            for ($i = 0; $i < 256; $i++) {
+                $rc4[$i] = $rc4[$j = ($j + ($t = $rc4[$i]) + ord($k[$i])) % 256];
+                $rc4[$j] = $t;
+            }
+            $_lastRc4Key = $key;
+            $_lastRc4KeyValue = $rc4;
+
+        } else {
+            $rc4 = $_lastRc4KeyValue;
+        }
+
+        $len = strlen($data);
+        $newData = '';
+        $a = 0;
+        $b = 0;
+        for ($i = 0; $i < $len; $i++) {
+            $b = ($b + ($t = $rc4[$a = ($a + 1) % 256])) % 256;
+            $rc4[$a] = $rc4[$b];
+            $rc4[$b] = $t;
+            $newData .= chr(ord($data[$i]) ^ $rc4[($rc4[$a] + $rc4[$b]) % 256]);
+        }
+
+        return $newData;
     }
 
     /**
