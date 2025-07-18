@@ -28,3 +28,5 @@ jobs:
       - name: Run phpunit
         run: |
           ./vendor/bin/phpunit --testsuite "Functional Tests"
+        env:
+          OPENSSL_CONF=${{ github.workspace }}/.github/workflows/openssl_legacy.cnf
