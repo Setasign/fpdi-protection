@@ -24,10 +24,10 @@ jobs:
 
       - name: Install dependencies
         run: composer update --dev --no-interaction --prefer-dist --no-progress --no-suggest --ansi
-        
+
       - name: Test
         run: php -i | grep -i "openssl"
-        
+
       - name: Test2
         run: php -i | grep -i "openssl"
         env:
