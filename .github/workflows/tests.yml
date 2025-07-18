@@ -3,10 +3,10 @@ on: [pull_request]
 jobs:
   tests:
     name: Run PHP Unit tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        php: ['5.6', '7.0', '7.1', '7.2']
+        php: ['7.1', '7.2']
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -22,14 +22,15 @@ jobs:
       - name: Run phpunit
         run: |
           ./vendor/bin/phpunit --testsuite "Functional Tests"
-
+        env:
+          OPENSSL_CONF: ${{ github.workspace }}/.github/workflows/openssl_legacy.cnf
 
   testsPhp8:
     name: Run PHP Unit tests (>= 7.3)
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        php: ['7.3', '7.4', '8.0', '8.1', '8.2']
+        php: ['7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -51,3 +52,5 @@ jobs:
       - name: Run phpunit
         run: |
           ./vendor/bin/phpunit --testsuite "Functional Tests"
+        env:
+          OPENSSL_CONF: ${{ github.workspace }}/.github/workflows/openssl_legacy.cnf
