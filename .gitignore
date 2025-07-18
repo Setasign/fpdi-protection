@@ -1,1 +1,5 @@
 vendor
+.idea
+composer.phar
+.DS_Store
+local-tests/*.pdf

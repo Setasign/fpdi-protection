@@ -3,9 +3,8 @@
  * This file is part of FpdiProtection
  *
  * @package   setasign\FpdiProtection
- * @copyright Copyright (c) 2017 Setasign - Jan Slabon (https://www.setasign.com)
+ * @copyright Copyright (c) 2022 Setasign GmbH & Co. KG (https://www.setasign.com)
  * @license   http://opensource.org/licenses/mit-license The MIT License
- * @version   2.0.0
  */
 
 namespace setasign\FpdiProtection;
@@ -195,18 +194,46 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
     protected $fileIdentifier;
 
     /**
+     * @var bool
+     */
+    protected $useArcfourFallback;
+
+    /**
      * FpdiProtection constructor.
      *
      * @param string $orientation
      * @param string $unit
      * @param string $size
+     * @param bool $useArcfourFallback
      */
-    public function __construct($orientation = 'P', $unit = 'mm', $size = 'A4')
+    public function __construct($orientation = 'P', $unit = 'mm', $size = 'A4', $useArcfourFallback = false)
     {
         parent::__construct($orientation, $unit, $size);
 
         $randomBytes = function_exists('random_bytes') ? \random_bytes(32) : \mt_rand();
-        $this->fileIdentifier = md5(__FILE__ . \php_sapi_name() . \phpversion() . $randomBytes, true);
+        $this->fileIdentifier = md5(__FILE__ . PHP_SAPI . PHP_VERSION . $randomBytes, true);
+        $this->useArcfourFallback = $useArcfourFallback;
+
+        if ($useArcfourFallback) {
+            return;
+        }
+
+        if (!function_exists('openssl_encrypt') || !in_array('rc4-40', openssl_get_cipher_methods(), true)) {
+            throw new \RuntimeException(
+                'OpenSSL with RC4 supported is required if $useArcfourFallback is false. ' .
+                'If using OpenSSL 3 make sure that legacy providers are loaded ' .
+                '(see https://wiki.openssl.org/index.php/OpenSSL_3.0#Providers).'
+            );
+        }
+
+        if (OPENSSL_VERSION_NUMBER >= 0x30000000 && PHP_VERSION_ID < 80100) {
+            throw new \RuntimeException(
+                'OpenSSL 3 is not supported with PHP versions < 8.1.0. ' .
+                'You\'re using PHP ' . PHP_VERSION . ' with ' . OPENSSL_VERSION_TEXT . '. ' .
+                'Please fix your PHP installation or set $useArcfourFallback to true to ' .
+                'use a slower fallback implementation.'
+            );
+        }
     }
 
     /**
@@ -215,7 +242,7 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
      * @param int|array $permissions An array of permission values (see class constants) or the sum of the constant
      *                               values. If a value is present it means that the permission is granted.
      * @param string $userPass If a user password is set, user will be prompted before document is opened.
-     * @param null $ownerPass If an owner password is set, document can be opened in privilege mode with no
+     * @param string|null $ownerPass If an owner password is set, document can be opened in privilege mode with no
      *                        restriction if that password is entered.
      * @param int $revision The revision number of the security handler (2 = RC4-40bits, 3 = RC4-128bits)
      * @return string The owner password
@@ -233,7 +260,7 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
         $this->pValue = $this->sanitizePermissionsValue($permissions, $revision);
 
         if ($ownerPass === null || $ownerPass === '') {
-            $ownerPass = function_exists('random_bytes') ? \random_bytes(32) : uniqid(rand());
+            $ownerPass = function_exists('random_bytes') ? \random_bytes(32) : uniqid(mt_rand(), true);
         }
 
         $this->encrypted = true;
@@ -270,7 +297,7 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
                 }
             }
 
-            $permissions = array_sum($permissions);
+            $permissions = (int)array_sum($permissions);
         }
 
         $permissions = (int)$permissions;
@@ -317,7 +344,7 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
      * @param string $userPassword
      * @param string $ownerPassword
      * @return string
-      */
+     */
     protected function computeOValue($userPassword, $ownerPassword = '')
     {
         $revision = $this->revision;
@@ -364,12 +391,12 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
         //    single-byte value of the iteration counter (from 1 to 19).
         if ($revision >= 3) {
             for ($i = 1; $i <= 19; $i++) {
-                $tmp = array();
+                $tmp = [];
                 for ($j = 0; $j < $this->keyLength; $j++) {
                     $tmp[$j] = ord($encryptionKey[$j]) ^ $i;
                     $tmp[$j] = chr($tmp[$j]);
                 }
-                $s = $this->arcfour(join('', $tmp), $s);
+                $s = $this->arcfour(implode('', $tmp), $s);
             }
         }
 
@@ -480,12 +507,12 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
         //    between that byte and the single-byte value of the iteration counter (from 1 to 19).
         $length = strlen($encryptionKey);
         for($i = 1; $i <= 19; $i++) {
-            $tmp = array();
+            $tmp = [];
             for($j = 0; $j < $length; $j++) {
                 $tmp[$j] = ord($encryptionKey[$j]) ^ $i;
                 $tmp[$j] = chr($tmp[$j]);
             }
-            $s = $this->arcfour(join('', $tmp), $s);
+            $s = $this->arcfour(implode('', $tmp), $s);
         }
 
         // f) Append 16 bytes of arbitrary padding to the output from the final invocation
@@ -503,7 +530,39 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
      */
     protected function arcfour($key, $data)
     {
-        return openssl_encrypt($data, 'RC4-40', $key, OPENSSL_RAW_DATA, '');
+        if (!$this->useArcfourFallback) {
+            return openssl_encrypt($data, 'rc4-40', $key,  OPENSSL_RAW_DATA, '');
+        }
+
+        static $_lastRc4Key = null, $_lastRc4KeyValue = null;
+
+        if ($_lastRc4Key !== $key) {
+            $k = str_repeat($key, (int)(256 / strlen($key) + 1));
+            $rc4 = range(0, 255);
+            $j = 0;
+            for ($i = 0; $i < 256; $i++) {
+                $rc4[$i] = $rc4[$j = ($j + ($t = $rc4[$i]) + ord($k[$i])) % 256];
+                $rc4[$j] = $t;
+            }
+            $_lastRc4Key = $key;
+            $_lastRc4KeyValue = $rc4;
+
+        } else {
+            $rc4 = $_lastRc4KeyValue;
+        }
+
+        $len = strlen($data);
+        $newData = '';
+        $a = 0;
+        $b = 0;
+        for ($i = 0; $i < $len; $i++) {
+            $b = ($b + ($t = $rc4[$a = ($a + 1) % 256])) % 256;
+            $rc4[$a] = $rc4[$b];
+            $rc4[$b] = $t;
+            $newData .= chr(ord($data[$i]) ^ $rc4[($rc4[$a] + $rc4[$b]) % 256]);
+        }
+
+        return $newData;
     }
 
     /**
