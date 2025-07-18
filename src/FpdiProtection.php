@@ -227,12 +227,18 @@ class FpdiProtection extends \setasign\Fpdi\Fpdi
         }
 
         if (OPENSSL_VERSION_NUMBER >= 0x30000000 && PHP_VERSION_ID < 80100) {
-            throw new \RuntimeException(
-                'OpenSSL 3 is not supported with PHP versions < 8.1.0. ' .
-                'You\'re using PHP ' . PHP_VERSION . ' with ' . OPENSSL_VERSION_TEXT . '. ' .
-                'Please fix your PHP installation or set $useArcfourFallback to true to ' .
-                'use a slower fallback implementation.'
-            );
+            // test if it is really supported:
+            $key = 'check-for-support-key';
+            $in = 'SetaPDF';
+            $out = \openssl_encrypt($in, 'rc4-40', $key, \OPENSSL_RAW_DATA, '');
+            if (!$out) {
+                throw new \RuntimeException(
+                    'OpenSSL 3 is not supported with PHP versions < 8.1.0. '
+                    . 'You\'re using PHP ' . \PHP_VERSION . ' with ' . \OPENSSL_VERSION_TEXT . '. '
+                    . 'Please fix your PHP installation or set $useArcfourFallback parameter to true '
+                    . 'property to true to use a slower fallback implementation.'
+                );
+            }
         }
     }
 
