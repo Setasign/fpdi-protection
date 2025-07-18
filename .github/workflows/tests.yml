@@ -24,6 +24,15 @@ jobs:
 
       - name: Install dependencies
         run: composer update --dev --no-interaction --prefer-dist --no-progress --no-suggest --ansi
+        
+      - name: Test
+        run: php -i | grep -i "openssl"
+        
+      - name: Test2
+        run: php -i | grep -i "openssl"
+        env:
+          OPENSSL_CONF: ${{ github.workspace }}/.github/workflows/openssl_legacy.cnf
+
 
       - name: Run phpunit
         run: |
