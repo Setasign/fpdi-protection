@@ -93,7 +93,9 @@ class FpdiProtectionTest extends TestCase
     {
         $reflection = new \ReflectionClass($pdf);
         $property = $reflection->getProperty('encryptionKey');
-        $property->setAccessible(true);
+        if (\version_compare(PHP_VERSION, '8.1', '<')) {
+            $property->setAccessible(true);
+        }
         return $property->getValue($pdf);
     }
 
@@ -129,7 +131,9 @@ class FpdiProtectionTest extends TestCase
 
         $reflection = new \ReflectionClass($pdf);
         $method = $reflection->getMethod('getPdfReader');
-        $method->setAccessible(true);
+        if (\version_compare(PHP_VERSION, '8.1', '<')) {
+            $method->setAccessible(true);
+        }
 
         $pdf->setProtection([], '', null);
         $pdf->AddPage();
@@ -222,7 +226,9 @@ class FpdiProtectionTest extends TestCase
 
         $reflection = new \ReflectionClass($pdf);
         $method = $reflection->getMethod('getPdfReader');
-        $method->setAccessible(true);
+        if (\version_compare(PHP_VERSION, '8.1', '<')) {
+            $method->setAccessible(true);
+        }
 
         $pdf->setProtection([], '', null, 2);
         $pdf->AddPage();
