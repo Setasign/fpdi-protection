@@ -1,23 +1,35 @@
 name: Tests
-on: [pull_request]
+
+on:
+  - pull_request
+
 jobs:
   tests:
     name: Run PHP Unit tests
+
+
     runs-on: ubuntu-latest
+
+
     strategy:
       matrix:
-        php: ['7.2']
+        php: ['7.2', '8.3', '8.4', '8.5']
+
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
+
       - name: Install php
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "${{ matrix.php }}"
+          php-version: ${{ matrix.php }}
+
 
       - name: Install dependencies
         run: composer update --dev --no-interaction --prefer-dist --no-progress --no-suggest --ansi
+
 
       - name: Run phpunit
         run: |
@@ -27,27 +39,38 @@ jobs:
 
   testsPhp8:
     name: Run PHP Unit tests (>= 7.3)
+
+
     runs-on: ubuntu-latest
+
+
     strategy:
       matrix:
         php: ['7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
+
       - name: Install mupdf and imagemagick
         run: sudo apt-get install mupdf-tools imagemagick
+
 
       - name: Install php
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "${{ matrix.php }}"
+          php-version: ${{ matrix.php }}
+
 
       - name: Upgrade phpunit
         run: composer require --dev --no-interaction --no-update "phpunit/phpunit:^9.0"
 
+
       - name: Install dependencies
         run: composer update --dev --no-interaction --prefer-dist --no-progress --no-suggest --ansi
+
 
       - name: Run phpunit
         run: |
