@@ -4,7 +4,6 @@ namespace setasign\FpdiProtection\functional;
 
 use PHPUnit\Framework\TestCase;
 use Prophecy\Exception\InvalidArgumentException;
-use setasign\Fpdi\Fpdi;
 use setasign\Fpdi\PdfParser\CrossReference\CrossReference;
 use setasign\Fpdi\PdfParser\Filter\AsciiHex;
 use setasign\Fpdi\PdfParser\PdfParser;
@@ -130,9 +129,14 @@ class FpdiProtectionTest extends TestCase
         $pdf = new FpdiProtection();
 
         $reflection = new \ReflectionClass($pdf);
-        $method = $reflection->getMethod('getPdfReader');
+        $getPdfReaderMethod = $reflection->getMethod('getPdfReader');
         if (\version_compare(PHP_VERSION, '8.1', '<')) {
-            $method->setAccessible(true);
+            $getPdfReaderMethod->setAccessible(true);
+        }
+
+        $getPdfReaderIdMethod = $reflection->getMethod('getPdfReaderId');
+        if (\version_compare(PHP_VERSION, '8.1', '<')) {
+            $getPdfReaderIdMethod->setAccessible(true);
         }
 
         $pdf->setProtection([], '', null);
@@ -143,7 +147,7 @@ class FpdiProtectionTest extends TestCase
         /**
          * @var PdfReader $reader
          */
-        $reader = $method->invoke($pdf, realpath($path));
+        $reader = $getPdfReaderMethod->invoke($pdf, $getPdfReaderIdMethod->invoke($pdf, $path));
         $object22 = $reader->getParser()->getIndirectObject(22, true);
         $value = PdfString::unescape($object22->value->value['FontFamily']->value);
         $filter = new AsciiHex();
@@ -225,9 +229,14 @@ class FpdiProtectionTest extends TestCase
         $pdf = new FpdiProtection();
 
         $reflection = new \ReflectionClass($pdf);
-        $method = $reflection->getMethod('getPdfReader');
+        $getPdfReaderMethod = $reflection->getMethod('getPdfReader');
         if (\version_compare(PHP_VERSION, '8.1', '<')) {
-            $method->setAccessible(true);
+            $getPdfReaderMethod->setAccessible(true);
+        }
+
+        $getPdfReaderIdMethod = $reflection->getMethod('getPdfReaderId');
+        if (\version_compare(PHP_VERSION, '8.1', '<')) {
+            $getPdfReaderIdMethod->setAccessible(true);
         }
 
         $pdf->setProtection([], '', null, 2);
@@ -238,7 +247,7 @@ class FpdiProtectionTest extends TestCase
         /**
          * @var PdfReader $reader
          */
-        $reader = $method->invoke($pdf, realpath($path));
+        $reader = $getPdfReaderMethod->invoke($pdf, $getPdfReaderIdMethod->invoke($pdf, $path));
         $object22 = $reader->getParser()->getIndirectObject(22, true);
         $value = PdfString::unescape($object22->value->value['FontFamily']->value);
         $filter = new AsciiHex();
